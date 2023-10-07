@@ -3,7 +3,9 @@ package feieyun
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -18,12 +20,36 @@ type Printer struct {
 	Url  string
 }
 
+type Status struct {
+	Message            string  `json:"msg"`
+	Ret                int     `json:"ret"`
+	Data               *string `json:"data"`
+	ServerExecutedTime int     `json:"serverExecutedTime"`
+}
+
 func NewPrinter(user, ukey, url string) Printer {
 	return Printer{
 		User: user,
 		Ukey: ukey,
 		Url:  url,
 	}
+}
+
+func (p Printer) Status(sn string) {
+	sig, timestamp := p.Sig()
+	client := http.Client{}
+	postValues := url.Values{}
+	postValues.Add("user", p.User)             //账号名
+	postValues.Add("stime", timestamp)         //当前时间的秒数，请求时间
+	postValues.Add("sig", sig)                 //签名
+	postValues.Add("apiname", "Open_printMsg") //固定
+	postValues.Add("sn", sn)                   //打印机编号
+	res, _ := client.PostForm(p.Url, postValues)
+	defer res.Body.Close()
+	resBody, _ := io.ReadAll(res.Body)
+	var status Status
+	json.Unmarshal(resBody, &status)
+	fmt.Println(status)
 }
 
 func (p Printer) Print(sn string, content string, backurl string) {
