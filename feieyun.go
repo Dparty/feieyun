@@ -35,7 +35,7 @@ func NewPrinter(user, ukey, url string) Printer {
 	}
 }
 
-func (p Printer) Status(sn string) {
+func (p Printer) Status(sn string) Status {
 	sig, timestamp := p.Sig()
 	client := http.Client{}
 	postValues := url.Values{}
@@ -49,7 +49,7 @@ func (p Printer) Status(sn string) {
 	resBody, _ := io.ReadAll(res.Body)
 	var status Status
 	json.Unmarshal(resBody, &status)
-	fmt.Println(status)
+	return status
 }
 
 func (p Printer) Print(sn string, content string, backurl string) {
