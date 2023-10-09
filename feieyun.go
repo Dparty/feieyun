@@ -10,6 +10,13 @@ import (
 	"time"
 )
 
+type FeieyunCallback struct {
+	OrderId string `form:"orderId" json:"orderId" binding:"required"`
+	Status  int    `form:"status" json:"status" binding:"required"`
+	Stime   int    `form:"stime" json:"stime" binding:"required"`
+	Sign    string `form:"sign" json:"sign" binding:"required"`
+}
+
 type FeieyunConfig struct {
 	User string
 	Ukey string
