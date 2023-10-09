@@ -2,7 +2,6 @@ package feieyun
 
 import (
 	"crypto/sha1"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,36 +13,57 @@ import (
 type Line interface {
 }
 
-type Printer struct {
+type PrinterFactory struct {
 	User string
 	Ukey string
 	Url  string
 }
 
-type Status struct {
-	Message            string  `json:"msg"`
-	Ret                int     `json:"ret"`
-	Data               *string `json:"data"`
-	ServerExecutedTime int     `json:"serverExecutedTime"`
-}
-
-func NewPrinter(user, ukey, url string) Printer {
-	return Printer{
+func NewPrinterFactory(user, ukey, url string) PrinterFactory {
+	return PrinterFactory{
 		User: user,
 		Ukey: ukey,
 		Url:  url,
 	}
 }
 
-func (p Printer) Status(sn string) Status {
-	sig, timestamp := p.Sig()
+func (p PrinterFactory) Connect(sn string) (Printer, error) {
+	signer := func() (string, string) {
+		itime := time.Now().Unix()
+		s := fmt.Sprintf("%s%s%v", p.User, p.Ukey, itime)
+		h := sha1.New()
+		h.Write([]byte(s))
+		bs := h.Sum(nil)
+		return fmt.Sprintf("%x", bs), fmt.Sprintf("%d", itime)
+	}
+	var printer Printer = Printer{
+		Url:    p.Url,
+		Sn:     sn,
+		Signer: signer,
+		CommonValues: func() url.Values {
+			sig, timestamp := signer()
+			postValues := url.Values{}
+			postValues.Add("user", p.User)
+			postValues.Add("stime", timestamp)
+			postValues.Add("sig", sig)
+			postValues.Add("apiname", "Open_printMsg")
+			postValues.Add("sn", sn)
+			return postValues
+		},
+	}
+	return printer, nil
+}
+
+type Printer struct {
+	Sn           string
+	Signer       func() (string, string)
+	CommonValues func() url.Values
+	Url          string
+}
+
+func (p Printer) Status() Status {
 	client := http.Client{}
-	postValues := url.Values{}
-	postValues.Add("user", p.User)             //账号名
-	postValues.Add("stime", timestamp)         //当前时间的秒数，请求时间
-	postValues.Add("sig", sig)                 //签名
-	postValues.Add("apiname", "Open_printMsg") //固定
-	postValues.Add("sn", sn)                   //打印机编号
+	postValues := p.CommonValues()
 	res, _ := client.PostForm(p.Url, postValues)
 	defer res.Body.Close()
 	resBody, _ := io.ReadAll(res.Body)
@@ -52,17 +72,11 @@ func (p Printer) Status(sn string) Status {
 	return status
 }
 
-func (p Printer) Print(sn string, content string, backurl string) {
-	sig, timestamp := p.Sig()
+func (p Printer) Print(content string, backurl string) {
 	client := http.Client{}
-	postValues := url.Values{}
-	postValues.Add("user", p.User)             //账号名
-	postValues.Add("stime", timestamp)         //当前时间的秒数，请求时间
-	postValues.Add("sig", sig)                 //签名
-	postValues.Add("apiname", "Open_printMsg") //固定
-	postValues.Add("sn", sn)                   //打印机编号
-	postValues.Add("content", content)         //打印内容
-	postValues.Add("times", "1")               //打印次数
+	postValues := p.CommonValues()
+	postValues.Add("content", content)
+	postValues.Add("times", "1")
 	if backurl != "" {
 		postValues.Add("backurl", backurl)
 	}
@@ -70,17 +84,9 @@ func (p Printer) Print(sn string, content string, backurl string) {
 	defer res.Body.Close()
 }
 
-func (p Printer) Sig() (string, string) {
-	itime := time.Now().Unix()
-	s := fmt.Sprintf("%s%s%v", p.User, p.Ukey, itime)
-	h := sha1.New()
-	h.Write([]byte(s))
-	bs := h.Sum(nil)
-	return fmt.Sprintf("%x", bs), fmt.Sprintf("%d", itime)
-}
-
-func SHA1(str string) string {
-	s := sha1.Sum([]byte(str))
-	strsha1 := hex.EncodeToString(s[:])
-	return strsha1
+type Status struct {
+	Message            string  `json:"msg"`
+	Ret                int     `json:"ret"`
+	Data               *string `json:"data"`
+	ServerExecutedTime int     `json:"serverExecutedTime"`
 }
