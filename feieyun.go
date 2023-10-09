@@ -10,54 +10,59 @@ import (
 	"time"
 )
 
-type Line interface {
-}
-
-type PrinterFactory struct {
+type FeieyunConfig struct {
 	User string
 	Ukey string
 	Url  string
 }
 
+type Line interface {
+}
+
+type PrinterFactory struct {
+	Config FeieyunConfig
+}
+
 func NewPrinterFactory(user, ukey, url string) PrinterFactory {
 	return PrinterFactory{
-		User: user,
-		Ukey: ukey,
-		Url:  url,
+		Config: FeieyunConfig{
+			User: user,
+			Ukey: ukey,
+			Url:  url,
+		},
 	}
 }
 
 func (p PrinterFactory) Connect(sn string) (Printer, error) {
-	signer := func() (string, string) {
-		itime := time.Now().Unix()
-		s := fmt.Sprintf("%s%s%v", p.User, p.Ukey, itime)
-		h := sha1.New()
-		h.Write([]byte(s))
-		bs := h.Sum(nil)
-		return fmt.Sprintf("%x", bs), fmt.Sprintf("%d", itime)
-	}
 	var printer Printer = Printer{
-		Url:    p.Url,
 		Sn:     sn,
-		Signer: signer,
-		CommonValues: func() url.Values {
-			sig, timestamp := signer()
-			postValues := url.Values{}
-			postValues.Add("user", p.User)
-			postValues.Add("stime", timestamp)
-			postValues.Add("sig", sig)
-			fmt.Println(postValues)
-			return postValues
-		},
+		Config: p.Config,
 	}
 	return printer, nil
 }
 
 type Printer struct {
-	Sn           string
-	Signer       func() (string, string)
-	CommonValues func() url.Values
-	Url          string
+	Config FeieyunConfig
+	Sn     string
+}
+
+func (p Printer) CommonValues() url.Values {
+	sig, itime := p.Sig()
+	postValues := url.Values{}
+	postValues.Add("user", p.Config.User)
+	postValues.Add("stime", itime)
+	postValues.Add("sig", sig)
+	fmt.Println(postValues)
+	return postValues
+}
+
+func (p Printer) Sig() (string, string) {
+	itime := time.Now().Unix()
+	s := fmt.Sprintf("%s%s%v", p.Config.User, p.Config.Ukey, itime)
+	h := sha1.New()
+	h.Write([]byte(s))
+	bs := h.Sum(nil)
+	return fmt.Sprintf("%x", bs), fmt.Sprintf("%d", itime)
 }
 
 func (p Printer) Status() Status {
@@ -65,7 +70,7 @@ func (p Printer) Status() Status {
 	postValues := p.CommonValues()
 	postValues.Add("sn", p.Sn)
 	postValues.Add("apiname", "Open_queryPrinterStatus")
-	res, _ := client.PostForm(p.Url, postValues)
+	res, _ := client.PostForm(p.Config.Url, postValues)
 	defer res.Body.Close()
 	resBody, _ := io.ReadAll(res.Body)
 	var status Status
@@ -83,7 +88,7 @@ func (p Printer) Print(content string, backurl string) {
 	if backurl != "" {
 		postValues.Add("backurl", backurl)
 	}
-	res, _ := client.PostForm(p.Url, postValues)
+	res, _ := client.PostForm(p.Config.Url, postValues)
 	defer res.Body.Close()
 }
 
