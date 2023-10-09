@@ -46,8 +46,7 @@ func (p PrinterFactory) Connect(sn string) (Printer, error) {
 			postValues.Add("user", p.User)
 			postValues.Add("stime", timestamp)
 			postValues.Add("sig", sig)
-			postValues.Add("apiname", "Open_printMsg")
-			postValues.Add("sn", sn)
+			fmt.Println(postValues)
 			return postValues
 		},
 	}
@@ -64,6 +63,8 @@ type Printer struct {
 func (p Printer) Status() Status {
 	client := http.Client{}
 	postValues := p.CommonValues()
+	postValues.Add("sn", p.Sn)
+	postValues.Add("apiname", "Open_queryPrinterStatus")
 	res, _ := client.PostForm(p.Url, postValues)
 	defer res.Body.Close()
 	resBody, _ := io.ReadAll(res.Body)
@@ -75,6 +76,8 @@ func (p Printer) Status() Status {
 func (p Printer) Print(content string, backurl string) {
 	client := http.Client{}
 	postValues := p.CommonValues()
+	postValues.Add("sn", p.Sn)
+	postValues.Add("apiname", "Open_printMsg")
 	postValues.Add("content", content)
 	postValues.Add("times", "1")
 	if backurl != "" {
