@@ -59,7 +59,6 @@ func (p Printer) CommonValues() url.Values {
 	postValues.Add("user", p.Config.User)
 	postValues.Add("stime", itime)
 	postValues.Add("sig", sig)
-	fmt.Println(postValues)
 	return postValues
 }
 
