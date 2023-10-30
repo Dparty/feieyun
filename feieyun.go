@@ -94,7 +94,10 @@ func (p Printer) Print(content string, backurl string) {
 	if backurl != "" {
 		postValues.Add("backurl", backurl)
 	}
-	res, _ := client.PostForm(p.Config.Url, postValues)
+	res, err := client.PostForm(p.Config.Url, postValues)
+	if err != nil {
+		return
+	}
 	defer res.Body.Close()
 }
 
