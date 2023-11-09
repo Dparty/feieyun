@@ -23,9 +23,6 @@ type FeieyunConfig struct {
 	Url  string
 }
 
-type Line interface {
-}
-
 type PrinterFactory struct {
 	Config FeieyunConfig
 }
