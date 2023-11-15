@@ -66,11 +66,11 @@ func (d *Div) String() string {
 }
 
 type Line struct {
-	content PrintAble
+	Content PrintAble
 }
 
 func (l Line) String() string {
-	return l.content.String() + BR
+	return l.Content.String() + BR
 }
 
 type PrintContent struct {
