@@ -14,20 +14,12 @@ func (t *Text) String() string {
 	return t.Content
 }
 
-func (t *Text) SetContent(content string) {
-	t.Content = content
-}
-
 type Center struct {
 	Content PrintAble
 }
 
 func (c *Center) String() string {
 	return "<C>" + c.Content.String() + "</C>"
-}
-
-func (c *Center) SetContent(content PrintAble) {
-	c.Content = content
 }
 
 type Bold struct {
@@ -63,6 +55,22 @@ type Line struct {
 	content PrintAble
 }
 
-func (l *Line) String() string {
+func (l Line) String() string {
 	return l.content.String() + BR
+}
+
+type PrintContent struct {
+	Lines []PrintAble
+}
+
+func (p *PrintContent) AddLine(content PrintAble) {
+	p.Lines = append(p.Lines, Line{content})
+}
+
+func (p *PrintContent) String() string {
+	s := ""
+	for _, line := range p.Lines {
+		s += line.String()
+	}
+	return s
 }
