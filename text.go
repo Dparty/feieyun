@@ -67,6 +67,10 @@ func (p *PrintContent) AddLine(content PrintAble) {
 	p.Lines = append(p.Lines, Line{content})
 }
 
+func (p *PrintContent) AddDiv(width int64) {
+	p.AddLine(&Div{Width: width})
+}
+
 func (p *PrintContent) String() string {
 	s := ""
 	for _, line := range p.Lines {
