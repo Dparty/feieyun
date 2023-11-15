@@ -63,8 +63,10 @@ type PrintContent struct {
 	Lines []PrintAble
 }
 
-func (p *PrintContent) AddLine(content PrintAble) {
-	p.Lines = append(p.Lines, Line{content})
+func (p *PrintContent) AddLine(contents ...PrintAble) {
+	for _, content := range contents {
+		p.Lines = append(p.Lines, Line{content})
+	}
 }
 
 func (p *PrintContent) AddDiv(width int64) {
