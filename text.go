@@ -38,6 +38,20 @@ func (c CenterBold) String() string {
 	return "<CB>" + c.Content.String() + "</CB>"
 }
 
+type Cut struct{}
+
+func (Cut) String() string {
+	return "<CUT>"
+}
+
+type Qrcode struct {
+	Content string
+}
+
+func (q Qrcode) String() string {
+	return "<QR>" + q.Content + "</QR>"
+}
+
 type Div struct {
 	Width int64
 }
